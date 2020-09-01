@@ -197,6 +197,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			spherical.radius *= scale;
 
+			console.log(spherical.radius)
+
 			// restrict radius to be between desired limits
 			spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) );
 
@@ -213,6 +215,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 			}
 
 			offset.setFromSpherical( spherical );
+
 
 			// rotate offset back to "camera-up-vector-is-up" space
 			offset.applyQuaternion( quatInverse );
@@ -314,6 +317,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	// current position in spherical coordinates
 	var spherical = new THREE.Spherical();
+	this.spherical = spherical;
 	var sphericalDelta = new THREE.Spherical();
 
 	var scale = 1;
@@ -350,11 +354,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	}
 
+	this.rotateLeftPublic = rotateLeft;
+
 	function rotateUp( angle ) {
 
 		sphericalDelta.phi -= angle;
 
 	}
+
+	this.rotateUpPublic = rotateUp;
 
 	var panLeft = function () {
 
@@ -478,6 +486,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 		}
 
 	}
+
+	this.dollyInPublic = dollyIn;
 
 	//
 	// event callbacks - update the object state

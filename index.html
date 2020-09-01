@@ -1,18 +1,38 @@
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>My first three.js app</title>
-		<style>
-			body { margin: 0; }
-			canvas { display: block; }
-		</style>
-	</head>
-	<body>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.min.js"></script>
-        <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/loaders/GLTFLoader.js"></script>
-        <script type="text/javascript" src="./src/OrbitControlsNew.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
-        <!-- <script type="module" src="./src/cinema.js"></script> -->
-		<script type="module" src="./src/main.js"></script>
-	</body>
+
+<head>
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <div id="info">Description</div>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 250;
+            text-align: left;
+            z-index: 100;
+            display: block;
+            background-color: white;
+            white-space: pre-wrap
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/loaders/GLTFLoader.js"></script>
+    <script type="text/javascript" src="./src/OrbitControlsNew.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <!-- <script type="module" src="./src/cinema.js"></script> -->
+    <script type="module" src="./src/main.js"></script>
+</body>
+
 </html>

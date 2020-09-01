@@ -9,7 +9,7 @@ app.raycaster = new THREE.Raycaster();
 app.mouse = new THREE.Vector2();
 app.parameters = {};
 window.app = app;
-import { CinemaEvents, promise_object_loader } from './cinema.js'
+import { CinemaEvents, promise_object_loader, scheduleEvents } from './cinema.js'
 
 
 const DEFAULT_DELAY = 200; // A default delay (in ms) used in Cinematic Events
@@ -18,6 +18,8 @@ const Z_SCALE = 1.0
 
 
 app.stare_at = new THREE.Vector3(8.644848097735595, 0.8570437703239369, -20.568877345322854);
+
+let default_display = "Selected:\n"
 
 
 function setup_threejs() {
@@ -54,9 +56,6 @@ function setup_threejs() {
 	app.height = window.innerHeight;
 	app._fullWindow = true;
 
-
-	// app.GEOMS["cube"] = cube;
-
 	app.controls.update();
 
 }
@@ -91,13 +90,17 @@ app.canvasClicked = function (e) {
 	// // calculate objects intersecting the picking ray
 	var intersects = app.raycaster.intersectObjects( app.geoms.env.children );
 	console.log(intersects)
+	let results = ""
 	for ( var i = 0; i < intersects.length; i++ ) {
 		var obj = intersects[i];
 		if (!obj.object.visible) continue;
-
 		console.log(obj)
-	
+		results += `\nx: ${obj.point.x.toFixed(3)}, y: ${obj.point.y.toFixed(3)}, z: ${obj.point.z.toFixed(3)}`;
+		break;
 	}
+	let final_string = default_display + results;
+
+	document.querySelector("#info").textContent = final_string;
 
 	// for (var i = 0, l = objs.length; i < l; i++) {
 	// 	var obj = objs[i];
@@ -189,6 +192,8 @@ let animate = function () {
 	// cube.rotation.x += 0.01;
 	// cube.rotation.y += 0.01;
 
+	scheduleEvents(cinema_timings);
+
 	app.renderer.render(app.scene, app.camera);
 };
 
@@ -202,17 +207,17 @@ let animate = function () {
 // Read the README.md to understand more
 export let cinema_timings = {
 	start: {
-		start_offset: 0,
+		start_offset: 3000,
 		finished: false,
 		active: false
 	},
 	events: [
 		new CinemaEvents({
 			name: "initial_zoom",
-			variable: "offset",
-			amt: 1.02,
-			until: 20,
-			eps: 1,
+			variable: "radius",
+			amt: 0.992,
+			until: 0.1,
+			eps: .05,
 			app: app
 		}),
 		new CinemaEvents({
@@ -222,63 +227,63 @@ export let cinema_timings = {
 			until: 0.94,
 			app: app
 		}),
-		new CinemaEvents({
-			name: "activate_danger",
-			pre_event: "initial_zoom",
-			customExec: () => {
-				quad_group.children[4].visible = true;
-			},
-			customCheck: () => true,
-			start_offset: DEFAULT_DELAY,
-			app: app
-		}),
+		// new CinemaEvents({
+		// 	name: "activate_danger",
+		// 	pre_event: "initial_zoom",
+		// 	customExec: () => {
+		// 		quad_group.children[4].visible = true;
+		// 	},
+		// 	customCheck: () => true,
+		// 	start_offset: DEFAULT_DELAY,
+		// 	app: app
+		// }),
 		new CinemaEvents({
 			name: "first_rotate",
 			variable: "theta",
 			amt: 0.01,
 			until: 3.1,
-			pre_event: "activate_danger",
+			pre_event: "initial_tilt",
 			start_offset: DEFAULT_DELAY,
 			app: app
 		}),
-		new CinemaEvents({
-			name: "activate_db",
-			pre_event: "first_rotate",
-			customExec: () => {
-				quad_group.children[4].visible = false;
-				quad_group.children[3].visible = true;
-			},
-			customCheck: () => true,
-			start_offset: DEFAULT_DELAY,
-			app: app
-		}),
-		new CinemaEvents({
-			name: "zoom_out_2",
-			variable: "offset",
-			amt: 0.98,
-			until: 400 * Z_SCALE,
-			pre_event: "activate_db",
-			start_offset: DEFAULT_DELAY,
-			eps: 20,
-			app: app
-		}),
-		new CinemaEvents({
-			name: "second_rotate",
-			variable: "theta",
-			amt: 0.01,
-			until: -2.6,
-			pre_event: "activate_db",
-			start_offset: DEFAULT_DELAY
-		}),
-		new CinemaEvents({
-			name: "second_tilt",
-			variable: "phi",
-			amt: 0.01,
-			until: 0.55,
-			pre_event: "activate_db",
-			start_offset: DEFAULT_DELAY,
-			app: app
-		}),
+		// new CinemaEvents({
+		// 	name: "activate_db",
+		// 	pre_event: "first_rotate",
+		// 	customExec: () => {
+		// 		quad_group.children[4].visible = false;
+		// 		quad_group.children[3].visible = true;
+		// 	},
+		// 	customCheck: () => true,
+		// 	start_offset: DEFAULT_DELAY,
+		// 	app: app
+		// }),
+		// new CinemaEvents({
+		// 	name: "zoom_out_2",
+		// 	variable: "offset",
+		// 	amt: 0.98,
+		// 	until: 400 * Z_SCALE,
+		// 	pre_event: "activate_db",
+		// 	start_offset: DEFAULT_DELAY,
+		// 	eps: 20,
+		// 	app: app
+		// }),
+		// new CinemaEvents({
+		// 	name: "second_rotate",
+		// 	variable: "theta",
+		// 	amt: 0.01,
+		// 	until: -2.6,
+		// 	pre_event: "activate_db",
+		// 	start_offset: DEFAULT_DELAY
+		// }),
+		// new CinemaEvents({
+		// 	name: "second_tilt",
+		// 	variable: "phi",
+		// 	amt: 0.01,
+		// 	until: 0.55,
+		// 	pre_event: "activate_db",
+		// 	start_offset: DEFAULT_DELAY,
+		// 	app: app
+		// }),
 		// new CinemaEvents({
 		//     name: "show_red_buidlings",
 		//     pre_event: "zoom_out_2",

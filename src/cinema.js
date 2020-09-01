@@ -32,7 +32,7 @@ export function promise_object_loader(filename, loader) {
   }
 
 
-function scheduleEvents(timings) {
+export function scheduleEvents(timings) {
     if (!timings.start.finished) {
         if (!timings.start.active) {
             timings.start.active = true;
@@ -99,34 +99,32 @@ export class CinemaEvents {
         this.customExec = customExec ? customExec.bind(this) : null;
         this.customCheck = customCheck ? customCheck.bind(this) : null;
 
-        this.cameraVars = ["offset", "theta", "phi"];
+        this.cameraVars = ["radius", "theta", "phi"];
         this.counter = 0;
         // This is a global variable provided by QGIS2THREEJS
         this.app = app
     }
     moveCamera() {
         // Only check a value if there is not end timer configured
-        let value =
-            this.variable == "offset"
-                ? this.app.controls.offset.length()
-                : this.app.controls[this.variable];
+        let value = this.app.controls.spherical[this.variable];
         if (this.end_timer === null && around(value, this.until, this.eps)) {
             this.finished_callback();
             return;
         }
         switch (this.variable) {
-            case "offset":
-                this.app.controls.dollyIn(this.amt);
+            case "radius":
+                this.app.controls.dollyInPublic(this.amt);
                 break;
             case "theta":
-                this.app.controls.rotateLeft(this.amt);
+                this.app.controls.rotateLeftPublic(this.amt);
                 break;
             case "phi":
-                this.app.controls.rotateUp(this.amt);
+                this.app.controls.rotateUpPublic(this.amt);
                 break;
             default:
                 console.error("Unknown Variable!");
         }
+        this.app.controls.update();
     }
     execute() {
         if (this.customExec) {
