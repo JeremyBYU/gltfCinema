@@ -114,12 +114,14 @@ async function load_models() {
   let loaded_db = promise_object_loader("models/db.json", OBJ_LOADER);
   let loaded_danger = promise_object_loader("models/danger.json", OBJ_LOADER);
   let promise_star = promise_object_loader("models/star.json", OBJ_LOADER);
-  let promise_paths = promise_object_loader("models/paths_simple.json", FILE_LOADER);
+  let promise_paths = promise_object_loader(
+    "models/paths_simple.json",
+    FILE_LOADER
+  );
   let promise_sphere = promise_object_loader("models/sphere.json", OBJ_LOADER);
 
   app.geoms.star_group = new THREE.Group();
   app.scene.add(app.geoms.star_group);
-
 
   Promise.all([
     loaded_quad,
@@ -139,7 +141,7 @@ async function load_models() {
     box.position.set(0, -0.4, 0);
 
     // create connecting line between box and drone
-    let line = createLine([box.position, quad.position], 0.005 );
+    let line = createLine([box.position, quad.position], 0.005);
 
     // Create the DB Mesh, set invisible initially
     db.position.set(0, 0.2, 0);
@@ -163,12 +165,11 @@ async function load_models() {
   });
 }
 
-
 function addStars(path_vectors, star_template) {
   // Need to add a dummy group around the star so that it can be displaced instead of the mesh
   let star_group_template = new THREE.Group();
   star_group_template.add(star_template);
-  path_vectors.forEach(path => {
+  path_vectors.forEach((path) => {
     let end_vec = path.end;
     let clone_star = star_group_template.clone();
     clone_star.position.set(end_vec[0], end_vec[1] + STAR_HEIGHT, end_vec[2]);
@@ -176,8 +177,6 @@ function addStars(path_vectors, star_template) {
   });
   app.geoms.star_group.visible = false;
 }
-
-
 
 function setup_threejs() {
   let scene = new THREE.Scene();
@@ -188,7 +187,7 @@ function setup_threejs() {
     1000
   );
   let light = new THREE.AmbientLight(0x404040, 6.0); // soft white light
-  let hemi_light = new THREE.HemisphereLight(0x7E8183, 0x080820, 1);
+  let hemi_light = new THREE.HemisphereLight(0x7e8183, 0x080820, 1);
 
   let renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -234,8 +233,7 @@ let animate = function () {
   app.renderer.render(app.scene, app.camera);
 
   // animate danger triangle and goal positions
-  if (app.geoms.quad_group)
-  {
+  if (app.geoms.quad_group) {
     app.geoms.quad_group.children[4].rotation.y += SPEED * 2;
   }
   setObjectRotation(app.geoms.star_group);
@@ -265,23 +263,23 @@ export let cinema_timings = {
     // }),
     new CinemaEvents({
       name: "activate_danger",
-    	customExec: () => {
+      customExec: () => {
         app.geoms.quad_group.children[4].visible = true;
-    	},
-    	customCheck: () => true,
-    	start_offset: 2000,
-    	app: app
+      },
+      customCheck: () => true,
+      start_offset: 2000,
+      app: app,
     }),
     new CinemaEvents({
-    	name: "activate_db",
-    	pre_event: "activate_danger",
-    	customExec: () => {
-    		app.geoms.quad_group.children[4].visible = false;
-    		app.geoms.quad_group.children[3].visible = true;
-    	},
-    	customCheck: () => true,
-    	start_offset: DEFAULT_DELAY,
-    	app: app
+      name: "activate_db",
+      pre_event: "activate_danger",
+      customExec: () => {
+        app.geoms.quad_group.children[4].visible = false;
+        app.geoms.quad_group.children[3].visible = true;
+      },
+      customCheck: () => true,
+      start_offset: DEFAULT_DELAY,
+      app: app,
     }),
     new CinemaEvents({
       name: "outward_zoom",
@@ -294,16 +292,38 @@ export let cinema_timings = {
       start_offset: 2000,
     }),
     new CinemaEvents({
-        name: "show_goals",
-        pre_event: "outward_zoom",
-        customExec: () => {
-            app.geoms.star_group.visible = true;
-        },
-        customCheck: () => true,
-        start_offset: 1000
+      name: "show_goals",
+      pre_event: "outward_zoom",
+      customExec: () => {
+        app.geoms.star_group.visible = true;
+      },
+      customCheck: () => true,
+      start_offset: 1000,
+    }),
+    new CinemaEvents({
+      name: "show_goals",
+      pre_event: "outward_zoom",
+      customExec: () => {
+        app.geoms.star_group.visible = true;
+      },
+      customCheck: () => true,
+      start_offset: 1000,
+    }),
+    new CinemaEvents({
+      name: "show_primary_goal",
+      pre_event: "show_goals",
+      customExec: () => {
+        for (let i = 0; i < app.geoms.star_group.children.length; i++) {
+          app.geoms.star_group.children[i].visible = false;
+        }
+        app.geoms.star_group.children[0].visible = true;
+        app.geoms.star_group.children[0].children[0].material.color = {r:0, g:1, b:0};
+      },
+      customCheck: () => true,
+      start_offset: 2000,
     }),
     // new CinemaEvents({
-      //   name: "initial_tilt",
+    //   name: "initial_tilt",
     //   variable: "phi",
     //   amt: 0.01,
     //   until: 0.94,
