@@ -197,7 +197,6 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			spherical.radius *= scale;
 
-			console.log(spherical.radius)
 
 			// restrict radius to be between desired limits
 			spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) );

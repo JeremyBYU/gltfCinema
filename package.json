@@ -1,0 +1,26 @@
+{
+  "name": "gltfcinema",
+  "version": "1.0.0",
+  "description": "Cinema for GLTF",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JeremyBYU/gltfCinema.git"
+  },
+  "keywords": [
+    "gltf"
+  ],
+  "author": "Jeremy Castagno",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JeremyBYU/gltfCinema/issues"
+  },
+  "homepage": "https://github.com/JeremyBYU/gltfCinema#readme",
+  "devDependencies": {
+    "http-server": "^0.12.3",
+    "prettier": "^2.1.1"
+  }
+}
