@@ -1,5 +1,5 @@
-const SPEED = 0.01;
-const MAX_POINTS = 1000;
+export const SPEED = 0.01;
+export const MAX_POINTS = 1000;
 
 const Z_SCALE = 1.0;
 
@@ -255,4 +255,20 @@ function createBufferLineGeometry(vectors, color = 0x0000ff, linewidth = 2) {
 
   line.geometry.attributes.position.needsUpdate = true; // required after the first render
   return line;
+}
+
+
+export function addPathsToScene(app, path_vectors, percent = 1, color = 0xDAA520) {
+  let path_geometries = path_vectors.map(vectors =>
+    createBufferLineGeometry(vectors, color, 4)
+  );
+  path_geometries.forEach(line => {
+    line.geometry.setDrawRange(
+      0,
+      Math.min(MAX_POINTS - 1, percent * MAX_POINTS)
+    );
+    line.geometry.attributes.position.needsUpdate = true;
+    app.scene.add(line);
+  });
+  return path_geometries;
 }

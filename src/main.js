@@ -20,9 +20,11 @@ import {
   scheduleEvents,
   createLine,
   setObjectRotation,
+  addPathsToScene,
+  MAX_POINTS
 } from "./cinema.js";
 
-const DEFAULT_DELAY = 4000; // A default delay (in ms) used in Cinematic Events
+const DEFAULT_DELAY = 3000; // A default delay (in ms) used in Cinematic Events
 const STAR_HEIGHT = 0.1; // Height in Meters of the "star" above a goal
 const Z_SCALE = 1.0;
 const SPEED = 0.01;
@@ -38,7 +40,7 @@ app.camera_start = new THREE.Vector3(
   -20.274785302236346
 );
 
-app.stare_at = new THREE.Vector3(3.409, 0, -20.561);
+app.start_position = new THREE.Vector3(3.409, 0, -20.561);
 app.scale = 0.1;
 
 let default_display = "Selected:\n";
@@ -95,7 +97,6 @@ async function loadEnv() {
   main_mesh.position.set(0, 0, 0);
 
   let position = main_mesh.children[1].geometry.boundingSphere.center;
-  // debugger;
   app.scene.add(main_mesh);
   app.geoms["env"] = main_mesh;
 
@@ -122,6 +123,9 @@ async function load_models() {
 
   app.geoms.star_group = new THREE.Group();
   app.scene.add(app.geoms.star_group);
+
+  app.geoms.sphere_group = new THREE.Group();
+  app.scene.add(app.geoms.sphere_group);
 
   Promise.all([
     loaded_quad,
@@ -153,7 +157,7 @@ async function load_models() {
 
     // Create the Quadrotor Group: quad, box, db, and line
     let quad_group = new THREE.Group();
-    quad_group.position.copy(app.stare_at);
+    quad_group.position.copy(app.start_position);
     quad_group.add(quad, box, line, db, danger);
     quad_group.scale.set(app.scale, app.scale, app.scale);
     app.geoms.quad_group = quad_group; // Set a global variable, ugly but helps out quite a bit
@@ -161,9 +165,20 @@ async function load_models() {
     app.scene.add(quad_group);
 
     let path_details = JSON.parse(path_resp);
+    let path_vectors = path_details.map((record) => {
+      record.path.unshift([app.start_position.x, app.start_position.y, app.start_position.z]);
+      let path_vector = record.path.map((point) => new THREE.Vector3(point[0], point[1], point[2]));
+      return path_vector;
+    })
     addStars(path_details, star);
+    addSpheres(path_details, sphere);
+
+    app.geoms.path_geometries = addPathsToScene(app, path_vectors, 0);
+
   });
 }
+
+
 
 function addStars(path_vectors, star_template) {
   // Need to add a dummy group around the star so that it can be displaced instead of the mesh
@@ -176,6 +191,16 @@ function addStars(path_vectors, star_template) {
     app.geoms.star_group.add(clone_star);
   });
   app.geoms.star_group.visible = false;
+}
+
+
+function addSpheres(path_vectors, sphere_template) {
+  path_vectors.forEach(path => {
+    let clone_sphere = sphere_template.clone();
+    clone_sphere.position.set(app.start_position.x, app.start_position.y, app.start_position.z);
+    app.geoms.sphere_group.add(clone_sphere);
+  });
+  app.geoms.sphere_group.visible = false;
 }
 
 function setup_threejs() {
@@ -207,7 +232,7 @@ function setup_threejs() {
   app.renderer = renderer;
   app.controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-  app.controls.target.set(app.stare_at.x, app.stare_at.y, app.stare_at.z);
+  app.controls.target.set(app.start_position.x, app.start_position.y, app.start_position.z);
   app.controls.update();
 
   app.width = window.innerWidth;
@@ -267,7 +292,7 @@ export let cinema_timings = {
         app.geoms.quad_group.children[4].visible = true;
       },
       customCheck: () => true,
-      start_offset: 2000,
+      start_offset: DEFAULT_DELAY,
       app: app,
     }),
     new CinemaEvents({
@@ -292,6 +317,16 @@ export let cinema_timings = {
       start_offset: 2000,
     }),
     new CinemaEvents({
+      name: "rotate_up",
+      variable: "phi",
+      pre_event: "activate_db",
+      amt: .005,
+      until: 0.825076503485411,
+      eps: 0.03,
+      app: app,
+      start_offset: 2000,
+    }),
+    new CinemaEvents({
       name: "show_goals",
       pre_event: "outward_zoom",
       customExec: () => {
@@ -308,149 +343,51 @@ export let cinema_timings = {
       },
       customCheck: () => true,
       start_offset: 1000,
+    }),
+    new CinemaEvents({
+        name: "draw_paths",
+        pre_event: "show_goals",
+        customExec: function () {
+            if (this.counter === 0) {
+                app.geoms.sphere_group.visible = true;
+            }
+            this.counter = this.counter + 8;
+            app.geoms.path_geometries.forEach((line, index) => {
+                // Set line color
+                const positions = line.geometry.attributes.position.array;
+                const end_line_pos = [
+                    positions[this.counter * 3],
+                    positions[this.counter * 3 + 1],
+                    positions[this.counter * 3 + 2]
+                ];
+                app.geoms.sphere_group.children[index].position.set(
+                    end_line_pos[0],
+                    end_line_pos[1],
+                    end_line_pos[2]
+                );
+                line.geometry.setDrawRange(0, this.counter);
+            });
+        },
+        customCheck: function () {
+            return this.counter > MAX_POINTS - 5;
+        },
+        start_offset: 1000
     }),
     new CinemaEvents({
       name: "show_primary_goal",
-      pre_event: "show_goals",
+      pre_event: "draw_paths",
       customExec: () => {
         for (let i = 0; i < app.geoms.star_group.children.length; i++) {
           app.geoms.star_group.children[i].visible = false;
+          app.geoms.path_geometries[i].visible = false
         }
+        app.geoms.path_geometries[0].visible = true;
         app.geoms.star_group.children[0].visible = true;
         app.geoms.star_group.children[0].children[0].material.color = {r:0, g:1, b:0};
       },
       customCheck: () => true,
       start_offset: 2000,
     }),
-    // new CinemaEvents({
-    //   name: "initial_tilt",
-    //   variable: "phi",
-    //   amt: 0.01,
-    //   until: 0.94,
-    //   app: app,
-    // }),
-    // new CinemaEvents({
-    // 	name: "activate_danger",
-    // 	pre_event: "initial_zoom",
-    // 	customExec: () => {
-    // 		quad_group.children[4].visible = true;
-    // 	},
-    // 	customCheck: () => true,
-    // 	start_offset: DEFAULT_DELAY,
-    // 	app: app
-    // }),
-    // new CinemaEvents({
-    //   name: "first_rotate",
-    //   variable: "theta",
-    //   amt: 0.01,
-    //   until: 3.1,
-    //   pre_event: "initial_zoom",
-    //   start_offset: DEFAULT_DELAY,
-    //   app: app,
-    // }),
-    // new CinemaEvents({
-    // 	name: "activate_db",
-    // 	pre_event: "first_rotate",
-    // 	customExec: () => {
-    // 		quad_group.children[4].visible = false;
-    // 		quad_group.children[3].visible = true;
-    // 	},
-    // 	customCheck: () => true,
-    // 	start_offset: DEFAULT_DELAY,
-    // 	app: app
-    // }),
-    // new CinemaEvents({
-    // 	name: "zoom_out_2",
-    // 	variable: "offset",
-    // 	amt: 0.98,
-    // 	until: 400 * Z_SCALE,
-    // 	pre_event: "activate_db",
-    // 	start_offset: DEFAULT_DELAY,
-    // 	eps: 20,
-    // 	app: app
-    // }),
-    // new CinemaEvents({
-    // 	name: "second_rotate",
-    // 	variable: "theta",
-    // 	amt: 0.01,
-    // 	until: -2.6,
-    // 	pre_event: "activate_db",
-    // 	start_offset: DEFAULT_DELAY
-    // }),
-    // new CinemaEvents({
-    // 	name: "second_tilt",
-    // 	variable: "phi",
-    // 	amt: 0.01,
-    // 	until: 0.55,
-    // 	pre_event: "activate_db",
-    // 	start_offset: DEFAULT_DELAY,
-    // 	app: app
-    // }),
-    // new CinemaEvents({
-    //     name: "show_red_buidlings",
-    //     pre_event: "zoom_out_2",
-    //     customExec: function () {
-    //         this.counter += 1;
-    //         app.project.layers[RED_BUILDINGS_LAYER].setOpacity(this.counter / 100);
-    //         app.project.layers[ALL_BUILDINGS_LAYER].setOpacity(
-    //             1 - this.counter / 100
-    //         );
-    //     },
-    //     customCheck: function () {
-    //         return this.counter > 100;
-    //     },
-    //     start_offset: DEFAULT_DELAY
-    // }),
-    // new CinemaEvents({
-    //     name: "show_building_cost",
-    //     pre_event: "show_red_buidlings",
-    //     customExec: function () {
-    //         this.counter += 1;
-    //         app.project.layers[BUILDING_COST_LAYER].setOpacity(this.counter / 100);
-    //     },
-    //     customCheck: function () {
-    //         return this.counter > 100;
-    //     },
-    //     start_offset: DEFAULT_DELAY
-    // }),
-    // new CinemaEvents({
-    //     name: "show_goals",
-    //     pre_event: "show_building_cost",
-    //     customExec: () => {
-    //         star_group.visible = true;
-    //     },
-    //     customCheck: () => true,
-    //     start_offset: DEFAULT_DELAY
-    // }),
-    // new CinemaEvents({
-    //     name: "draw_paths",
-    //     pre_event: "show_goals",
-    //     customExec: function () {
-    //         if (this.counter === 0) {
-    //             sphere_group.visible = true;
-    //         }
-    //         this.counter = this.counter + 2;
-    //         path_geometries.forEach((line, index) => {
-    //             // Set line color
-    //             const positions = line.geometry.attributes.position.array;
-    //             const end_line_pos = [
-    //                 positions[this.counter * 3],
-    //                 positions[this.counter * 3 + 1],
-    //                 positions[this.counter * 3 + 2]
-    //             ];
-    //             sphere_group.children[index].position.set(
-    //                 end_line_pos[0],
-    //                 end_line_pos[1],
-    //                 end_line_pos[2]
-    //             );
-    //             line.geometry.setDrawRange(0, this.counter);
-    //         });
-    //     },
-    //     customCheck: function () {
-    //         return this.counter > MAX_POINTS - 5;
-    //     },
-    //     start_offset: 1000
-    // })
   ],
 };
 
